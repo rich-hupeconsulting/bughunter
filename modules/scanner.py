@@ -1,18 +1,30 @@
+# modules/scanner.py
+
 import subprocess
 import json
 import os
 from datetime import datetime
 
+
 def run_command(command):
+    """Executes a shell command and returns its stdout."""
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=300)
+        result = subprocess.run(
+            command, shell=True, capture_output=True, text=True, timeout=300
+        )
+        if result.stderr:
+            print(f"[!] Error: {result.stderr.strip()}")
         return result.stdout.strip()
     except Exception as e:
-        return str(e)
+        print(f"[!] Exception while running command: {e}")
+        return ""
+
 
 def write_json(tool, domain, output):
-    os.makedirs("data/outputs", exist_ok=True)
-    filename = f"data/outputs/{tool}_{domain}.json"
+    """Writes output data to JSON file under data/outputs."""
+    safe_name = domain.replace("://", "_").replace("/", "_").replace(".", "_")
+    filename = f"data/outputs/{tool}_{safe_name}.json"
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as f:
         json.dump({
             "tool": tool,
@@ -21,28 +33,35 @@ def write_json(tool, domain, output):
             "results": output
         }, f, indent=2)
 
-def run_ffuf(domain):
-    print("[+] Running ffuf with wordlist on:", domain)
-    command = (
-        f"ffuf -u {domain}/FUZZ -w /usr/share/seclists/Discovery/Web-Content/common.txt "
-        f"-t 40 -o data/outputs/ffuf_{domain.replace('://','_')}.json -of json"
-    )
-    run_command(command)
 
-def run_nuclei(domain):
-    print("[+] Running nuclei on:", domain)
-    output = run_command(f"echo {domain} | nuclei -silent -json")
-    results = [json.loads(line) for line in output.splitlines() if line.strip().startswith('{')]
-    write_json("nuclei", domain, results)
+def run_subfinder(domain):
+    """Runs subfinder for passive subdomain enumeration."""
+    print("[+] Running subfinder...")
+    output = run_command(f"subfinder -silent -d {domain}")
+    return output.splitlines() if output else []
 
-def run_hakrawler(domain):
-    print("[+] Running hakrawler on:", domain)
-    output = run_command(f"echo {domain} | hakrawler")
-    urls = output.splitlines()
-    write_json("hakrawler", domain, urls)
 
-def run_all_scans(domain):
-    run_hakrawler(domain)
-    run_ffuf(domain)
-    run_nuclei(domain)
-    print("[*] Scanning phase complete.")
+def run_amass(domain):
+    """Runs amass enum for deeper subdomain enumeration."""
+    print("[+] Running amass...")
+    output = run_command(f"amass enum -silent -d {domain}")
+    return output.splitlines() if output else []
+
+
+def run_httpx(subdomains):
+    """Probes subdomains for live HTTP/S services."""
+    print("[+] Running httpx...")
+    if not subdomains:
+        return []
+
+    joined = "\n".join(subdomains)
+    command = f"echo '{joined}' | httpx -silent"
+    output = run_command(command)
+    return output.splitlines() if output else []
+
+
+def run_gau(domain):
+    """Fetches historical URLs using gau."""
+    print("[+] Running gau...")
+    output = run_command(f"gau {domain}")
+    return output.splitlines() if output else []

@@ -1,6 +1,8 @@
 {
   "tool": "amass",
   "target": "192.168.80.132",
-  "timestamp": "2025-05-19T20:32:28.568517",
-  "results": []
+  "timestamp": "2025-05-19T21:35:10.329841",
+  "results": [
+    "No names were discovered"
+  ]
 }

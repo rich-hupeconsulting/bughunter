@@ -1,0 +1,119 @@
+# serve.py
+import os
+import threading
+import time
+import json
+from pathlib import Path
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
+from modules import recon, scanner, logger
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+SCAN_LOG = Path("scan_log.json")
+if not SCAN_LOG.exists():
+    SCAN_LOG.write_text("[]")
+
+# --- FastAPI App Setup ---
+app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key="secret-key")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# --- Utility Functions ---
+def update_scan_log(entry):
+    try:
+        with open(SCAN_LOG, "r") as f:
+            scans = json.load(f)
+    except json.JSONDecodeError:
+        scans = []
+    scans.append(entry)
+    with open(SCAN_LOG, "w") as f:
+        json.dump(scans, f, indent=2)
+
+# --- Scan Worker ---
+def perform_scan(target, tools):
+    update_scan_log({
+        "target": target,
+        "tools": tools,
+        "status": "running"
+    })
+    try:
+        print(f"[+] Starting recon on: {target}")
+        if hasattr(recon, "run_full_recon"):
+            result = recon.run_full_recon(target)
+        elif hasattr(recon, "run_recon"):
+            result = recon.run_recon(target)
+        else:
+            raise AttributeError("Neither 'run_full_recon' nor 'run_recon' found in recon module")
+
+        if not isinstance(result, tuple) or len(result) != 2:
+            raise ValueError("Expected recon result as tuple (subdomains, urls)")
+
+        subdomains, urls = result
+        print(f"[+] Recon complete. Found {len(subdomains)} subdomains and {len(urls)} URLs.")
+
+        print("[*] Starting scanner phase...")
+        for domain in subdomains:
+            scanner.run_all_scans(domain)
+
+        update_scan_log({
+            "target": target,
+            "tools": tools,
+            "status": "complete",
+            "recon": {
+                "subdomains": subdomains,
+                "urls": urls
+            }
+        })
+    except Exception as e:
+        print(f"[ERROR] Scan failed: {e}")
+        update_scan_log({
+            "target": target,
+            "tools": tools,
+            "status": "error",
+            "error": str(e)
+        })
+
+# --- Routes ---
+@app.get("/", response_class=HTMLResponse)
+async def dashboard():
+    return """
+    <html>
+        <head>
+            <title>BugHunter Scanner</title>
+        </head>
+        <body>
+            <h1>Submit Scan</h1>
+            <form method="post" action="/scan">
+                Target: <input type="text" name="target" /><br />
+                <label><input type="checkbox" name="tools" value="subfinder" checked> subfinder</label><br />
+                <label><input type="checkbox" name="tools" value="amass" checked> amass</label><br />
+                <label><input type="checkbox" name="tools" value="httpx" checked> httpx</label><br />
+                <label><input type="checkbox" name="tools" value="nuclei" checked> nuclei</label><br />
+                <label><input type="checkbox" name="tools" value="ffuf" checked> ffuf</label><br />
+                <input type="submit" value="Start Scan" />
+            </form>
+        </body>
+    </html>
+    """
+
+@app.post("/scan")
+async def start_scan(target: str = Form(...), tools: list[str] = Form(...)):
+    threading.Thread(target=perform_scan, args=(target, tools), daemon=True).start()
+    return {"message": f"Scan started for {target}"}
+
+@app.get("/scans")
+async def get_scans():
+    try:
+        with open(SCAN_LOG, "r") as f:
+            return JSONResponse(content=json.load(f))
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# --- Entry Point for Docker ---
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("serve:app", host="0.0.0.0", port=8000)

@@ -1,0 +1,6 @@
+{
+  "tool": "ffuf",
+  "target": "Make sure you've installed everything with: pip install 'httpx[cli]'",
+  "timestamp": "2025-05-22T18:52:01.412566",
+  "results": ""
+}

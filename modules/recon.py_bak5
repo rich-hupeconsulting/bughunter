@@ -1,0 +1,74 @@
+# recon.py
+import subprocess
+import json
+import os
+from datetime import datetime
+
+DATA_DIR = "data/outputs"
+os.makedirs(DATA_DIR, exist_ok=True)
+
+def run_command(command):
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=300)
+        return result.stdout.strip()
+    except Exception as e:
+        return f"[ERROR] {str(e)}"
+
+def write_output(filename, data):
+    with open(os.path.join(DATA_DIR, filename), "w") as f:
+        json.dump(data, f, indent=2)
+
+def run_subfinder(domain):
+    print("[+] Running subfinder...")
+    output = run_command(f"subfinder -d {domain} -silent -oJ")
+    subdomains = []
+
+    try:
+        for line in output.splitlines():
+            if line.strip().startswith("{"):
+                subdomains.append(json.loads(line)["host"])
+    except Exception as e:
+        print(f"[ERROR] subfinder: {e}")
+
+    write_output(f"subfinder_{domain.replace('.', '_')}.json", subdomains)
+    return subdomains
+
+def run_amass(domain):
+    print("[+] Running amass enum...")
+    output = run_command(f"amass enum -d {domain} -silent")
+    subdomains = output.splitlines()
+    write_output(f"amass_{domain.replace('.', '_')}.json", subdomains)
+    return subdomains
+
+def run_httpx(subdomains):
+    print("[+] Probing with httpx...")
+    joined = "\n".join(subdomains)
+    output = run_command(f"echo '{joined}' | httpx -silent")
+    live_hosts = output.splitlines()
+    write_output(f"httpx_{datetime.utcnow().isoformat()}.json", live_hosts)
+    return live_hosts
+
+def run_gau(hosts):
+    print("[+] Running gau...")
+    urls = []
+    for host in hosts:
+        output = run_command(f"gau {host}")
+        urls.extend(output.splitlines())
+
+    write_output(f"gau_{datetime.utcnow().isoformat()}.json", urls)
+    return urls
+
+def run_full_recon(domain):
+    try:
+        sub1 = run_subfinder(domain)
+        sub2 = run_amass(domain)
+        subdomains = list(set(sub1 + sub2))
+        live_hosts = run_httpx(subdomains)
+        urls = run_gau(live_hosts)
+        return subdomains, urls
+    except Exception as e:
+        print(f"[ERROR] Full recon failed: {e}")
+        return [], []
+
+def run_recon(domain, tools=None):
+    return run_full_recon(domain, tools)

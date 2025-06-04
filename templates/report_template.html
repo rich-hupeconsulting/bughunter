@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>BugHunter Report</title>
+    <style>
+        body { font-family: sans-serif; margin: 2rem; background: #f9f9f9; }
+        h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        .section { background: white; padding: 1rem; margin-bottom: 2rem; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+        pre { background: #eee; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Recon & Vulnerability Report</h1>
+    <p><strong>Generated:</strong> {{ generated }}</p>
+    <img src="{{ chart_path }}" alt="Summary Chart" style="max-width: 100%;">
+
+    {% for tool, entries in sections.items() %}
+        <div class="section">
+            <h2>{{ tool | upper }}</h2>
+            <p><strong>AI Summary:</strong><br>{{ summaries[tool] }}</p>
+            <pre>{{ entries | tojson(indent=2) }}</pre>
+        </div>
+    {% endfor %}
+</body>
+</html>

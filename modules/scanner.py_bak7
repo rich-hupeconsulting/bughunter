@@ -1,0 +1,115 @@
+# scanner.py
+import subprocess
+import json
+import os
+from datetime import datetime
+
+print("[DEBUG] scanner.py loaded from local volume")
+
+
+def run_command(command):
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=300)
+        return result.stdout.strip()
+    except Exception as e:
+        return str(e)
+
+def write_json(tool, domain, output):
+    import os
+    from datetime import datetime
+
+    safe_name = (
+        domain.replace("https://", "")
+              .replace("http://", "")
+              .replace(":", "_")
+              .replace("/", "_")
+              .replace(".", "_")
+    )
+
+    filename = f"data/outputs/{tool}_{safe_name}.json"
+    output_dir = os.path.dirname(filename)
+
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"[DEBUG] Ensured output directory: {output_dir}")
+    except Exception as e:
+        print(f"[ERROR] Failed to create directory {output_dir}: {e}")
+        raise
+
+    try:
+        with open(filename, "w") as f:
+            json.dump({
+                "tool": tool,
+                "target": domain,
+                "timestamp": datetime.utcnow().isoformat(),
+                "results": output
+            }, f, indent=2)
+        print(f"[DEBUG] Successfully wrote to: {filename}")
+    except Exception as e:
+        print(f"[ERROR] Failed to write file {filename}: {e}")
+        raise
+
+
+
+
+def run_ffuf(domain):
+    print("[+] Running ffuf with wordlist on:", domain)
+    command = (
+        f"ffuf -u {domain}/FUZZ -w /usr/share/seclists/Discovery/Web-Content/common.txt "
+        f"-t 40 -of json"
+    )
+    output = run_command(command)
+    write_log("ffuf", output)
+    try:
+        parsed = json.loads(output)
+    except:
+        parsed = output
+    stripped = domain.replace("https://", "").replace("http://", "")
+    write_json("ffuf", stripped, parsed)
+
+def run_nuclei(domain):
+    print("[+] Running nuclei on:", domain)
+    output = run_command(f"echo {domain} | nuclei -silent -json")
+    write_log("ffuf", output)
+    results = [json.loads(line) for line in output.splitlines() if line.strip().startswith('{')]
+    stripped = domain.replace("https://", "").replace("http://", "")
+    write_json("nuclei", stripped, results)
+
+def run_hakrawler(domain):
+    print("[+] Running hakrawler on:", domain)
+    output = run_command(f"echo {domain} | hakrawler")
+    write_log("ffuf", output)
+    urls = output.splitlines()
+    stripped = domain.replace("https://", "").replace("http://", "")
+    write_json("hakrawler", stripped, urls)
+
+def run_naabu(ip):
+    print("[+] Running naabu on:", ip)
+    output = run_command(f"echo {ip} | naabu -silent")
+    write_log("ffuf", output)
+    results = output.splitlines()
+    write_json("naabu", ip, results)
+
+def run_nmap(ip):
+    print("[+] Running nmap on:", ip)
+    output = run_command(f"nmap -T4 -sV {ip}")
+    write_log("ffuf", output)
+    write_json("nmap", ip, output.splitlines())
+
+def run_all_scans(domain):
+    run_hakrawler(domain)
+    run_ffuf(domain)
+    run_nuclei(domain)
+    print("[*] Scanning phase complete.")
+
+def run_ip_scans(ip):
+    run_naabu(ip)
+    run_nmap(ip)
+    print("[*] IP scanning phase complete.")
+
+def write_log(tool, content):
+    os.makedirs("data/logs", exist_ok=True)
+    log_path = f"data/logs/{tool}.log"
+    with open(log_path, "a") as f:
+        f.write(f"\n\n===== {datetime.utcnow().isoformat()} =====\n")
+        f.write(content.strip() + "\n")

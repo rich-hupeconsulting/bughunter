@@ -1,0 +1,65 @@
+# serve.py
+from fastapi import FastAPI, Request, Form, UploadFile, File
+from fastapi.responses import HTMLResponse
+from starlette.middleware.sessions import SessionMiddleware
+from pathlib import Path
+import json
+import uuid
+import modules.recon as recon
+import modules.scanner as scanner
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+import os
+
+app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key="changeme")
+templates = Jinja2Templates(directory="templates")
+
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+@app.get("/", response_class=HTMLResponse)
+def dashboard(request: Request):
+    scan_log = json.loads(Path("data/scan_log.json").read_text()) if Path("data/scan_log.json").exists() else []
+    return templates.TemplateResponse("dashboard.html", {"request": request, "scans": scan_log})
+
+@app.post("/scan")
+async def submit_scan(request: Request, target: str = Form(...)):
+    log_path = Path("data/scan_log.json")
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    log = json.loads(log_path.read_text()) if log_path.exists() else []
+    entry = {
+        "target": target,
+        "tools": ["subfinder", "amass", "httpx", "nuclei", "ffuf"],
+        "status": "running"
+    }
+    log.append(entry)
+    log_path.write_text(json.dumps(log, indent=2))
+
+    try:
+        subdomains, urls = recon.run_recon(target)
+        scanner.run_all_scans(target)
+
+        entry["status"] = "complete"
+        entry["recon"] = {
+            "subdomains": subdomains,
+            "urls": urls
+        }
+    except Exception as e:
+        entry["status"] = "error"
+        entry["error"] = str(e)
+
+    log_path.write_text(json.dumps(log, indent=2))
+    return {"message": "Scan started for " + target}
+
+@app.get("/status")
+def scan_status():
+    log_path = Path("data/scan_log.json")
+    if not log_path.exists():
+        return {"scans": []}
+    return {"scans": json.loads(log_path.read_text())}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

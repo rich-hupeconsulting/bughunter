@@ -1,0 +1,387 @@
+[
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "error",
+    "error": "cannot unpack non-iterable NoneType object"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "error",
+    "error": "cannot unpack non-iterable NoneType object"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "error",
+    "error": "module 'modules.recon' has no attribute 'run_recon'"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "error",
+    "error": "module 'modules.recon' has no attribute 'run_full_recon'"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "error",
+    "error": "cannot import name 'run_subfinder' from 'modules.scanner' (/app/modules/scanner.py)"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "live_hosts": [
+        "The httpx command line client could not run because the required dependencies were not installed.",
+        "Make sure you've installed everything with: pip install 'httpx[cli]'"
+      ],
+      "urls": [
+        "http://The httpx command line client could not run because the required dependencies were not installed.",
+        "http://Make sure you've installed everything with: pip install 'httpx[cli]'"
+      ]
+    }
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "live_hosts": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "live_hosts": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "live_hosts": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "live_hosts": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "live_hosts": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "live_hosts": [],
+      "urls": []
+    }
+  }
+]

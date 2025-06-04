@@ -1,0 +1,89 @@
+# modules/recon.py
+
+import subprocess
+import json
+import os
+from datetime import datetime
+
+def run_command(command):
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=300)
+        return result.stdout.strip()
+    except Exception as e:
+        return str(e)
+
+def write_json(tool, domain, output):
+    safe_name = domain.replace("://", "_").replace("/", "_").replace(".", "_")
+    filename = f"data/outputs/{tool}_{safe_name}.json"
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    print(f"[DEBUG] Writing {tool} output to: {filename}")
+    with open(filename, "w") as f:
+        json.dump({
+            "tool": tool,
+            "target": domain,
+            "timestamp": datetime.utcnow().isoformat(),
+            "results": output
+        }, f, indent=2)
+
+def run_subfinder(domain):
+    print("[+] Running subfinder...")
+    output = run_command(f"subfinder -d {domain} -silent -all")
+    subdomains = output.splitlines()
+    write_json("subfinder", domain, subdomains)
+    return subdomains
+
+def run_amass(domain):
+    print("[+] Running amass enum...")
+    output = run_command(f"amass enum -passive -d {domain}")
+    subdomains = output.splitlines()
+    write_json("amass", domain, subdomains)
+    return subdomains
+
+def run_httpx(domains):
+    print("[+] Probing with httpx...")
+    joined = "\n".join(domains)
+    output = run_command(f"echo '{joined}' | httpx -silent")
+    live = output.splitlines()
+    write_json("httpx", "live_hosts", live)
+    return live
+
+def run_gau(domain):
+    print("[+] Running gau...")
+    output = run_command(f"gau {domain}")
+    urls = output.splitlines()
+    write_json("gau", domain, urls)
+    return urls
+
+def run_full_recon(domain, tools=None):
+    if not tools:
+        tools = ["subfinder", "amass", "httpx", "gau"]
+
+    all_subdomains = []
+
+    if "subfinder" in tools:
+        subfinder_results = run_subfinder(domain)
+        all_subdomains.extend(subfinder_results)
+
+    if "amass" in tools:
+        amass_results = run_amass(domain)
+        all_subdomains.extend(amass_results)
+
+    all_subdomains = sorted(set(all_subdomains))
+
+    live_hosts = []
+    if "httpx" in tools and all_subdomains:
+        live_hosts = run_httpx(all_subdomains)
+
+    urls = []
+    if "gau" in tools:
+        urls = run_gau(domain)
+
+    return {
+        "subdomains": all_subdomains,
+        "live_hosts": live_hosts,
+        "urls": urls,
+    }
+
+# Compatibility wrapper expected by the UI/scan queue system
+def run_recon(domain, tools=None):
+    return run_full_recon(domain, tools)

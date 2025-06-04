@@ -1,0 +1,87 @@
+import uvicorn
+from fastapi import FastAPI, Request, Form
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+import json
+import threading
+from modules import recon
+
+app = FastAPI()
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+OUTPUT_DIR = DATA_DIR / "outputs"
+LOG_FILE = DATA_DIR / "scan_log.json"
+UPLOAD_DIR = BASE_DIR / "uploads"
+
+# Ensure required directories exist
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE.touch(exist_ok=True)
+
+@app.get("/", response_class=HTMLResponse)
+def form():
+    return """
+    <h2>BugHunter Scanner</h2>
+    <form method="post" action="/scan">
+        <label>Target domain:</label><br>
+        <input name="target" type="text" required><br><br>
+        <label>Tools:</label><br>
+        <input type="checkbox" name="tools" value="subfinder" checked> subfinder<br>
+        <input type="checkbox" name="tools" value="amass" checked> amass<br>
+        <input type="checkbox" name="tools" value="httpx" checked> httpx<br>
+        <input type="checkbox" name="tools" value="nuclei" checked> nuclei<br>
+        <input type="checkbox" name="tools" value="ffuf" checked> ffuf<br>
+        <br>
+        <button type="submit">Start Scan</button>
+    </form>
+    """
+
+@app.post("/scan")
+async def scan(request: Request, target: str = Form(...), tools: list[str] = Form(...)):
+    log_scan_status(target, tools, "running")
+    thread = threading.Thread(target=run_scan, args=(target, tools))
+    thread.start()
+    return RedirectResponse(url="/status", status_code=302)
+
+@app.get("/status")
+def status():
+    return JSONResponse(load_json(LOG_FILE))
+
+def run_scan(domain, tools):
+    try:
+        print(f"[+] Starting recon on: {domain}")
+        subdomains, urls = recon.run_recon(domain, tools)
+        log_scan_status(domain, tools, "complete", {
+            "subdomains": subdomains,
+            "urls": urls
+        })
+    except Exception as e:
+        print(f"[ERROR] Scan failed: {e}")
+        log_scan_status(domain, tools, "error", str(e))
+
+def load_json(path):
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        return []
+
+def log_scan_status(domain, tools, status, extra=None):
+    scans = load_json(LOG_FILE)
+    entry = {
+        "target": domain,
+        "tools": tools,
+        "status": status
+    }
+    if status == "error":
+        entry["error"] = extra
+    elif status == "complete":
+        entry["recon"] = extra
+
+    scans.append(entry)
+    with open(LOG_FILE, "w") as f:
+        json.dump(scans, f, indent=2)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

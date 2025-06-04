@@ -1,0 +1,66 @@
+from pathlib import Path
+from fastapi import FastAPI, Request, Form, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+import os
+import shutil
+from uuid import uuid4
+from typing import List
+
+# --- Setup ---
+app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key="hunter2")  # Use a secure secret in production
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+VALID_USERNAME = "admin"
+VALID_PASSWORD = os.getenv("BUGHUNTER_PASSWORD", "password")
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+# --- Routes ---
+@app.get("/", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    if request.session.get("user") != VALID_USERNAME:
+        return RedirectResponse("/login", status_code=302)
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/login")
+async def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    if username == VALID_USERNAME and password == VALID_PASSWORD:
+        request.session["user"] = username
+        return RedirectResponse("/", status_code=302)
+    return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/login", status_code=302)
+
+@app.post("/upload", response_class=HTMLResponse)
+async def upload_results(request: Request, files: List[UploadFile] = File(...)):
+    if request.session.get("user") != VALID_USERNAME:
+        return RedirectResponse("/login", status_code=302)
+    saved = []
+    for file in files:
+        dest = UPLOAD_DIR / f"{uuid4()}_{file.filename}"
+        with dest.open("wb") as f:
+            shutil.copyfileobj(file.file, f)
+        saved.append(dest.name)
+    return templates.TemplateResponse("dashboard.html", {"request": request, "message": f"Uploaded: {', '.join(saved)}"})
+
+@app.post("/scan", response_class=HTMLResponse)
+async def start_scan(request: Request, target: str = Form(...), tools: List[str] = Form(...)):
+    print(f"[SCAN QUEUED] Target: {target}, Tools: {tools}")
+    return templates.TemplateResponse("dashboard.html", {"request": request, "message": f"Scan queued for {target} with tools: {tools}"})
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("serve:app", host="0.0.0.0", port=8000, reload=False)

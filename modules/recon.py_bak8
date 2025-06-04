@@ -1,0 +1,45 @@
+# modules/recon.py
+
+from modules.scanner import (
+    run_subfinder,
+    run_amass,
+    run_httpx,
+    run_nuclei,
+    run_ffuf,
+    run_gau
+)
+
+def run_recon(domain, tools):
+    print(f"[+] Starting recon on: {domain}")
+    all_subdomains = set()
+    urls = []
+
+    if "subfinder" in tools:
+        result = run_subfinder(domain)
+        if result:
+            all_subdomains.update(result)
+
+    if "amass" in tools:
+        result = run_amass(domain)
+        if result:
+            all_subdomains.update(result)
+
+    live_hosts = list(all_subdomains)
+
+    if "httpx" in tools:
+        result = run_httpx(live_hosts)
+        if result:
+            live_hosts = result
+
+    if "nuclei" in tools:
+        for host in live_hosts:
+            run_nuclei(host)
+
+    if "ffuf" in tools:
+        for host in live_hosts:
+            run_ffuf(host)
+
+    if "gau" in tools:
+        urls = run_gau(domain)
+
+    return list(all_subdomains), urls

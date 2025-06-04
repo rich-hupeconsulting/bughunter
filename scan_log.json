@@ -1,0 +1,146 @@
+[
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "complete",
+    "recon": {
+      "subdomains": [],
+      "urls": []
+    }
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "error",
+    "error": "Expected recon result as tuple (subdomains, urls)"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "error",
+    "error": "Expected recon result as tuple (subdomains, urls)"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "error",
+    "error": "argument of type 'NoneType' is not iterable"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "running"
+  },
+  {
+    "target": "http://earth.local",
+    "tools": [
+      "subfinder",
+      "amass",
+      "httpx",
+      "nuclei",
+      "ffuf"
+    ],
+    "status": "error",
+    "error": "argument of type 'NoneType' is not iterable"
+  }
+]

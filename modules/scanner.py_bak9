@@ -1,0 +1,63 @@
+# modules/scanner.py
+import subprocess
+import json
+import os
+from datetime import datetime
+
+def run_command(command):
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=300)
+        return result.stdout.strip()
+    except Exception as e:
+        return str(e)
+
+def write_json(tool, domain, output):
+    safe_name = domain.replace("://", "_").replace("/", "_").replace(".", "_")
+    filename = f"data/outputs/{tool}_{safe_name}.json"
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    print(f"[DEBUG] Writing {tool} output to: {filename}")
+    with open(filename, "w") as f:
+        json.dump({
+            "tool": tool,
+            "target": domain,
+            "timestamp": datetime.utcnow().isoformat(),
+            "results": output
+        }, f, indent=2)
+
+def run_subfinder(domain):
+    print("[+] Running subfinder...")
+    output = run_command(f"subfinder -d {domain} -silent -json")
+    results = [json.loads(line)["host"] for line in output.splitlines() if line.strip().startswith("{")]
+    write_json("subfinder", domain, results)
+    return results
+
+def run_amass(domain):
+    print("[+] Running amass enum...")
+    output = run_command(f"amass enum -passive -d {domain}")
+    results = output.splitlines()
+    write_json("amass", domain, results)
+    return results
+
+def run_httpx(domains):
+    print("[+] Probing with httpx...")
+    joined = "\n".join(domains)
+    output = run_command(f"echo '{joined}' | httpx -silent")
+    results = output.splitlines()
+    write_json("httpx", "probed", results)
+    return results
+
+def run_nuclei(domain):
+    print("[+] Running nuclei...")
+    output = run_command(f"echo {domain} | nuclei -silent -json")
+    results = [json.loads(line) for line in output.splitlines() if line.strip().startswith("{")]
+    write_json("nuclei", domain, results)
+
+def run_ffuf(domain):
+    print("[+] Running ffuf...")
+    command = f"ffuf -u http://{domain}/FUZZ -w /usr/share/seclists/Discovery/Web-Content/common.txt -t 40 -of json"
+    output = run_command(command)
+    try:
+        parsed = json.loads(output)
+    except:
+        parsed = output
+    write_json("ffuf", domain, parsed)

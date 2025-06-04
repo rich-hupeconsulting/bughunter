@@ -15,6 +15,7 @@ WORKDIR /app
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --break-system-packages 'httpx[cli]'
 
 # --- Install Go ---
 RUN wget https://go.dev/dl/go1.24.0.linux-amd64.tar.gz && \
@@ -51,4 +52,7 @@ EXPOSE 11434
 COPY . .
 
 # Auto-start Ollama and background summarizer
-ENTRYPOINT ["bash", "-c", "ollama serve & exec python main.py"]
+#ENTRYPOINT ["bash", "-c", "ollama serve & exec python serve.py"]
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
+ENTRYPOINT ["./start.sh"]

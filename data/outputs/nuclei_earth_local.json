@@ -1,0 +1,6 @@
+{
+  "tool": "nuclei",
+  "target": "earth.local",
+  "timestamp": "2025-05-21T18:37:29.804061",
+  "results": []
+}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - BugHunter</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+  <h2>BugHunter Dashboard</h2>
+  <p><a href="/logout" class="btn btn-sm btn-outline-secondary">Logout</a></p>
+
+  {% if message %}
+    <div class="alert alert-info">{{ message }}</div>
+  {% endif %}
+
+  <h4>Start New Scan</h4>
+  <form method="post" action="/scan">
+    <div class="mb-3">
+      <input name="target" class="form-control" placeholder="Target domain or IP" required>
+    </div>
+    <div class="mb-3">
+      <label>Select Tools:</label><br>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="tools" value="subfinder" checked> Subfinder</div>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="tools" value="amass"> Amass</div>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="tools" value="httpx"> Httpx</div>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="tools" value="nuclei"> Nuclei</div>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="tools" value="ffuf"> FFUF</div>
+    </div>
+    <button class="btn btn-success">Queue Scan</button>
+  </form>
+
+  <hr>
+  <h4>Upload Scan Results</h4>
+  <form method="post" action="/upload" enctype="multipart/form-data">
+    <input type="file" name="files" multiple class="form-control mb-2">
+    <button class="btn btn-secondary">Upload</button>
+  </form>
+</div>
+</body>
+</html>

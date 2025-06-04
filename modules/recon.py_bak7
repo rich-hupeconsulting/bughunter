@@ -1,0 +1,100 @@
+# modules/recon.py
+
+import subprocess
+import json
+import os
+from datetime import datetime
+
+
+def run_command(command):
+    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    return result.stdout.strip()
+
+
+def write_json(tool, domain, output):
+    safe_name = domain.replace("://", "_").replace("/", "_").replace(".", "_")
+    output_dir = "data/outputs"
+    os.makedirs(output_dir, exist_ok=True)
+    filename = os.path.join(output_dir, f"{tool}_{safe_name}.json")
+    print(f"[DEBUG] Writing {tool} output to: {filename}")
+    with open(filename, "w") as f:
+        json.dump({
+            "tool": tool,
+            "target": domain,
+            "timestamp": datetime.utcnow().isoformat(),
+            "results": output
+        }, f, indent=2)
+
+
+def run_subfinder(domain):
+    print("[+] Running subfinder...")
+    output = run_command(f"subfinder -d {domain} -silent -all")
+    results = output.splitlines()
+    write_json("subfinder", domain, results)
+    return results
+
+
+def run_amass(domain):
+    print("[+] Running amass enum...")
+    output = run_command(f"amass enum -d {domain}")
+    results = output.splitlines()
+    write_json("amass", domain, results)
+    return results
+
+
+def run_httpx(subdomains):
+    print("[+] Probing with httpx...")
+    input_data = "\n".join(subdomains)
+    output = subprocess.run(["httpx", "-silent"], input=input_data, text=True, capture_output=True).stdout.strip()
+    results = output.splitlines()
+    write_json("httpx", "live_hosts", results)
+    return results
+
+
+def run_gau(domain):
+    print("[+] Running gau...")
+    output = run_command(f"gau {domain}")
+    urls = output.splitlines()
+    write_json("gau", domain, urls)
+    return urls
+
+def run_recon(domain, tools):
+    from modules.scanner import run_subfinder, run_amass, run_httpx, run_nuclei, run_ffuf
+
+    all_subdomains = set()
+    urls = []
+
+    if "subfinder" in tools:
+        result = run_subfinder(domain)
+        if result:
+            all_subdomains.update(result)
+
+    if "amass" in tools:
+        result = run_amass(domain)
+        if result:
+            all_subdomains.update(result)
+
+    live_hosts = list(all_subdomains)
+
+    if "httpx" in tools:
+        result = run_httpx(live_hosts)
+        if result:
+            live_hosts = result  # overwrite with actual live
+
+    if "nuclei" in tools:
+        for host in live_hosts:
+            run_nuclei(host)
+
+    if "ffuf" in tools:
+        for host in live_hosts:
+            run_ffuf(host)
+
+    if "gau" in tools:
+        from modules.scanner import run_gau
+        urls = run_gau(domain)
+
+    return list(all_subdomains), urls
+
+
+def run_full_recon(domain, tools=None):
+    return run_recon(domain, tools)

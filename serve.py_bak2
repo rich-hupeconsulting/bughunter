@@ -1,0 +1,103 @@
+from fastapi import FastAPI, Request, Form, UploadFile, File
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+from uuid import uuid4
+from typing import List
+import os, shutil, threading, json
+from modules import recon, scanner
+from pathlib import Path
+
+app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key="hunter2")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+UPLOAD_DIR = Path("uploads")
+OUTPUT_DIR = Path("data/outputs")
+SCAN_LOG = Path("data/scan_log.json")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+USERNAME = "admin"
+PASSWORD = os.getenv("BUGHUNTER_PASSWORD", "password")
+
+def save_scan_log(entry):
+    logs = []
+    if SCAN_LOG.exists():
+        logs = json.loads(SCAN_LOG.read_text())
+    logs.insert(0, entry)
+    SCAN_LOG.write_text(json.dumps(logs[:25], indent=2))
+
+def run_scan_background(target, tools, session_id):
+    print(f"[SCAN STARTED] {target} using {tools}")
+    result = {"target": target, "tools": tools, "status": "complete"}
+    try:
+        subdomains, urls = recon.run_recon(target)
+        result["recon"] = {"subdomains": len(subdomains), "urls": len(urls)}
+        for host in subdomains:
+            if any(c.isalpha() for c in host):
+                scanner.run_all_scans(host)
+            else:
+                scanner.run_ip_scans(host)
+    except Exception as e:
+        result["status"] = "error"
+        result["error"] = str(e)
+    save_scan_log(result)
+    print(f"[SCAN COMPLETE] {target}")
+
+@app.get("/", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    user = request.session.get("user")
+    if user != USERNAME:
+        return RedirectResponse("/login", status_code=302)
+    log_data = json.loads(SCAN_LOG.read_text()) if SCAN_LOG.exists() else []
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "scan_log": log_data,
+        "message": request.session.pop("message", None),
+    })
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/login")
+async def login(request: Request, username: str = Form(...), password: str = Form(...)):
+    if username == USERNAME and password == PASSWORD:
+        request.session["user"] = username
+        return RedirectResponse("/", status_code=302)
+    return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"})
+
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/login", status_code=302)
+
+@app.post("/upload", response_class=HTMLResponse)
+async def upload_results(request: Request, files: List[UploadFile] = File(...)):
+    user = request.session.get("user")
+    if user != USERNAME:
+        return RedirectResponse("/login", status_code=302)
+    saved = []
+    for file in files:
+        dest = UPLOAD_DIR / f"{uuid4()}_{file.filename}"
+        with dest.open("wb") as f:
+            shutil.copyfileobj(file.file, f)
+        saved.append(dest.name)
+    request.session["message"] = f"Uploaded: {', '.join(saved)}"
+    return RedirectResponse("/", status_code=302)
+
+@app.post("/scan", response_class=HTMLResponse)
+async def start_scan(request: Request, target: str = Form(...), tools: List[str] = Form(...)):
+    if request.session.get("user") != USERNAME:
+        return RedirectResponse("/login", status_code=302)
+    threading.Thread(target=run_scan_background, args=(target, tools, request.session.get("user")), daemon=True).start()
+    request.session["message"] = f"Scan started for {target} with tools: {', '.join(tools)}"
+    return RedirectResponse("/", status_code=302)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("serve:app", host="0.0.0.0", port=8000, reload=False)

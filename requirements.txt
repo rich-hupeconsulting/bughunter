@@ -1,1 +1,13 @@
+fastapi
+uvicorn
+aiofiles
+python-multipart
+jinja2
 openai
+matplotlib
+pandas
+plotly
+requests
+llama-index
+itsdangerous
+httpx[cli]

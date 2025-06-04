@@ -1,0 +1,29 @@
+# modules/recon.py
+from modules.scanner import (
+    run_subfinder,
+    run_amass,
+    run_httpx,
+    run_nuclei,
+    run_ffuf
+)
+
+def run_full_recon(domain):
+    print(f"[+] Starting recon on: {domain}")
+    
+    subdomains = run_subfinder(domain)
+    subdomains += run_amass(domain)
+    subdomains = list(set(subdomains))
+
+    live_hosts = run_httpx(subdomains)
+
+    urls = []
+    for host in live_hosts:
+        run_nuclei(host)
+        run_ffuf(host)
+        urls.append(f"http://{host}")  # placeholder for future JS/hakrawler etc.
+
+    return {
+        "subdomains": subdomains,
+        "live_hosts": live_hosts,
+        "urls": urls
+    }

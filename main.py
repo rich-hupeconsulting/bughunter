@@ -17,12 +17,16 @@ def main():
 
     print("[*] Scanning all live hosts...")
     with open("data/outputs/httpx_probed.json") as f:
-        data = json.load(f)
-        live_hosts = data.get("results", [])
-        if not live_hosts:
-            print("[!] No live hosts found by httpx.")
-        for host in live_hosts:
-            scanner.run_all_scans(host)
+        raw_hosts = json.load(f)["results"]
+
+# Only include valid URLs
+    live_hosts = [h for h in raw_hosts if isinstance(h, str) and h.startswith(("http://", "https://"))]
+
+    if not live_hosts:
+        print("[!] No live hosts found by httpx.")
+    for host in live_hosts:
+        clean_host = host.replace("https://", "").replace("http://", "")
+        scanner.run_all_scans(clean_host)
 
     if args.analyze_js:
         print("[*] Running AI analysis on JavaScript files...")
