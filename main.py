@@ -3,7 +3,7 @@ import argparse
 import os
 import json
 from modules import recon  # Module handles toolchain recon
-from modules import scanner  # Module handles vuln discovery
+from modules import scanner  # Module provides scanning utilities
 from ai.openai_helper import analyze_js_directory
 
 def main():
