@@ -19,20 +19,11 @@ Easy Docker Deployment
 
 Installation
 1. Clone the Repository
-bash
-Copy
-Edit
 git clone https://github.com/youruser/bughunter.git
 cd bughunter
 2. Build the Docker Image
-bash
-Copy
-Edit
 docker build -t bughunter .
 Running the Application
-bash
-Copy
-Edit
 docker run -p 8000:8000 \
   -v $(pwd):/app \
   -v /etc/hosts:/etc/hosts:ro \
@@ -59,9 +50,6 @@ nuclei	(Planned) Custom vulnerability scans
 ffuf	(Planned) Fuzzing paths & parameters
 
 Directory Structure
-php
-Copy
-Edit
 bughunter/
 ├── Dockerfile
 ├── serve.py                  # Web server and UI
@@ -119,4 +107,3 @@ Author
 Developed by Hupe Consulting
 Contact: richard@hupeconsulting.co.uk
 
-Let me know if you'd like this saved as a file or want to add usage examples or screenshots in future.
