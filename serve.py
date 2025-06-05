@@ -14,7 +14,10 @@ from modules.utils import load_scan_log, append_scan_log, update_scan_status
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="secret123")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+STATIC_DIR = Path("static")
+STATIC_DIR.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 SCAN_LOG_PATH = Path("data/scan_log.json")
 SCAN_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
