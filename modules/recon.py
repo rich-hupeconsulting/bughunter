@@ -5,9 +5,9 @@ from modules.scanner import (
     run_subfinder,
     run_amass,
     run_httpx,
-    run_gau
+    run_gau,
+    write_json,
 )
-from modules.utils import write_json
 
 def run_full_recon(domain):
     print(f"[+] Starting recon on: {domain}")
